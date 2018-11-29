@@ -2,8 +2,8 @@
 
 set -e
 
-# Perform all actions as $POSTGRES_USER
-export PGUSER="$POSTGRES_USER"
+# Perform all actions as $POSTGRESQL_USERNAME
+export PGUSER="$POSTGRESQL_USERNAME"
 
 # Create the 'template_postgis' template db
 "${psql[@]}" <<- 'EOSQL'
@@ -11,8 +11,8 @@ CREATE DATABASE template_postgis;
 UPDATE pg_database SET datistemplate = TRUE WHERE datname = 'template_postgis';
 EOSQL
 
-# Load PostGIS into both template_database and $POSTGRES_DB
-for DB in template_postgis "$POSTGRES_DB"; do
+# Load PostGIS into both template_database and $POSTGRESQL_DATABASE
+for DB in template_postgis "$POSTGRESQL_DATABASE"; do
 	echo "Loading PostGIS extensions into $DB"
 	"${psql[@]}" --dbname="$DB" <<-'EOSQL'
 		CREATE EXTENSION IF NOT EXISTS postgis;
