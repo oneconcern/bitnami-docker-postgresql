@@ -25,6 +25,40 @@ ENV BITNAMI_APP_NAME="postgresql" \
 
 VOLUME [ "/bitnami/postgresql", "/docker-entrypoint-initdb.d" ]
 
+
+ENV POSTGIS_VERSION 2.5.1
+ENV POSTGIS_SHA256 fb137056f43aae0e9d475dc5b7934eccce466f86f5ceeb69ec8b5cea26817a91
+
+## Install Postgis
+RUN install_packages wget gcc make build-essential libxml2-dev libproj-dev libgdal-dev autoconf automake libtool libprotobuf-c-dev protobuf-c-compiler protobuf-compiler \
+    && cd /tmp \
+    && wget -P ./ https://download.osgeo.org/geos/geos-3.7.0.tar.bz2 \
+    && export C_INCLUDE_PATH=/opt/bitnami/postgresql/include/:/opt/bitnami/common/include/ \
+    && export LIBRARY_PATH=/opt/bitnami/postgresql/lib/:/opt/bitnami/common/lib/ \
+    && export LD_LIBRARY_PATH=/opt/bitnami/postgresql/lib/:/opt/bitnami/common/lib/ \
+    && tar xfj geos-3.7.0.tar.bz2 \
+    && cd geos-3.7.0 \
+    && ./configure --prefix=/opt/bitnami/postgresql \
+    && make -j $(cat /proc/cpuinfo | grep processor | wc -l) \
+    && make install \
+    && cd /tmp \
+    && rm -rf geos-3.7.0 \
+    && wget -O postgis.tar.gz "https://download.osgeo.org/postgis/source/postgis-$POSTGIS_VERSION.tar.gz" \
+    && echo "$POSTGIS_SHA256 *postgis.tar.gz" | sha256sum -c - \
+    && mkdir -p /usr/src/postgis \
+    && tar \
+        --extract \
+        --file postgis.tar.gz \
+        --directory /usr/src/postgis \
+        --strip-components 1 \
+    && rm postgis.tar.gz \
+    && cd /usr/src/postgis \
+    && ./autogen.sh \
+    && ./configure --with-pgconfig=/opt/bitnami/postgresql/bin/pg_config --prefix=/opt/bitnami/postgresql \
+    && make -j $(cat /proc/cpuinfo | grep processor | wc -l) \
+    && make install \
+    && rm -rf /usr/src/postgis
+
 EXPOSE 5432
 
 USER 1001
